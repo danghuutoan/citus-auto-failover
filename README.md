@@ -1,0 +1,1 @@
+# citus-auto-failover
