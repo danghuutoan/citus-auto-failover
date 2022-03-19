@@ -1,0 +1,95 @@
+version: "3.9"
+services:
+  citus:
+    image: citusdata/citus:10.2
+    build: ./debezium-postgres-citus
+    ports:
+      - 5432:5432
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    command:
+      - "postgres"
+      - "-c"
+      - "config_file=/etc/postgresql/postgresql.conf"
+    volumes:
+      - ./ads.csv:/data/ads.csv
+      - ./campaigns.csv:/data/campaigns.csv
+      - ./companies.csv:/data/companies.csv
+      - postgres:/var/lib/postgresql/data
+      # - ./pg_hba.conf:/var/lib/postgresql/data/pgdata/pg_hba.conf
+      - ./postgres.conf:/etc/postgresql/postgresql.conf
+      - ./init_db.sql:/docker-entrypoint-initdb.d/z-init_db.sql
+    env_file:
+      - .env
+
+  citus-1:
+    image: citusdata/citus:10.2
+    build: ./debezium-postgres-citus
+    ports:
+      - 5433:5432
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-1:/var/lib/postgresql/data
+    env_file:
+      - .env
+    expose:
+      - 5432
+    command: [
+      "pg_autoctl", "create", "postgres",
+      "--ssl-self-signed",
+      "--auth", "trust",
+      "--pg-hba-lan",
+      "--monitor", "postgresql://autoctl_node@monitor/pg_auto_failover",
+      "--run"]
+    user: postgres
+
+  citus-2:
+    image: citusdata/citus:10.2
+    build: ./debezium-postgres-citus
+    ports:
+      - 5434:5432
+    user: postgres
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-2:/var/lib/postgresql/data
+    env_file:
+      - .env
+    expose:
+      - 5432
+    command: [
+      "pg_autoctl", "create", "postgres",
+      "--ssl-self-signed",
+      "--auth", "trust",
+      "--pg-hba-lan",
+      "--monitor", "postgresql://autoctl_node@monitor/pg_auto_failover",
+      "--run"]
+
+  monitor:
+    image: citusdata/pg_auto_failover:demo
+    environment:
+      PGDATA: /tmp/pgaf
+      PG_AUTOCTL_DEBUG: 1
+    command: pg_autoctl create monitor --ssl-self-signed --auth trust --run
+    expose:
+      - 5432
+  demo-app:
+    image: citusdata/pg_auto_failover:demo
+    environment:
+      PGDATA: /tmp/pgaf
+      PG_AUTOCTL_DEBUG: 1
+    command: [
+      "pg_autoctl", "do", "demo", "run",
+      "--username", "postgres",
+      "--clients", "10",
+      "--duration", "125",
+      "--first-failover", "45",
+      "--failover-freq", "30",
+      "--monitor", "postgresql://autoctl_node@monitor/pg_auto_failover"]
+
+volumes:
+  postgres:
+  postgres-1:
+  postgres-2:
+  postgres-3:
