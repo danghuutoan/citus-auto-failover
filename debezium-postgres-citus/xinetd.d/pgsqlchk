@@ -1,10 +1,10 @@
 service pgsqlchk
 {
-        flags           = REUSE
+        flags           = IPv4
         socket_type     = stream
-        port            = 23267
+        port            = 9201
         wait            = no
-        user            = nobody
+        user            = postgres
         server          = /opt/pgsqlchk
         log_on_failure  += USERID
         disable         = no

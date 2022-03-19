@@ -78,6 +78,23 @@ services:
       "--failover-freq", "30",
       "--monitor", "postgresql://autoctl_node@monitor/pg_auto_failover"]
 
+  haproxy:
+    image: haproxy:1.9
+    build: ./haproxy
+    platform: "linux/amd64"
+    privileged: true
+    ports:
+      - "3308:3308"
+      - "3307:3307"
+    depends_on:
+      - citus-1
+      - citus-2
+    volumes:
+      - ./haproxy/conf.d/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+    environment:
+      DNS_ENABLED: "true"
+      LOG_LEVEL: "debug"
+
 volumes:
   postgres:
   postgres-1:

@@ -9,5 +9,5 @@ COPY ./postgres.conf /etc/postgresql/postgresql.conf
 COPY ./pgsqlchk /opt/pgsqlchk
 RUN chmod 755 /opt/pgsqlchk
 COPY ./xinetd.d/pgsqlchk /etc/xinetd.d/pgsqlchk
-RUN echo "pgsqlchk 23267/tcp # pgsqlchk" >> /etc/services
+RUN echo "pgsqlchk 9201/tcp # pgsqlchk" >> /etc/services
 RUN /etc/init.d/xinetd start
